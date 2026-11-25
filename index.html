@@ -96,11 +96,15 @@
   .palette-title h2 { font-size: clamp(44px, 8vw, 128px); line-height: 0.98; letter-spacing: -0.035em; font-weight: 600; color: #FFFFFF; text-shadow: 0 2px 24px rgba(20, 20, 19, 0.35); }
   @media (prefers-reduced-motion: reduce) { .palette { height: auto; } .palette-stage { position: relative; } }
   /* Mosaïque de produits : grille dense, la tuile ouverte prend 2 × 2 cases. */
-  #shop-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 260px; grid-auto-flow: dense; gap: 14px; }
+  .mgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 260px; grid-auto-flow: dense; gap: 14px; }
   .mtile { position: relative; overflow: hidden; border-radius: 10px; background: var(--line); cursor: pointer; min-width: 0; }
   .mtile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transform-origin: 0 0; }
   .mtile.tall { grid-row: span 2; }
-  .mtile.open { grid-column: span 3; grid-row: span 2; cursor: zoom-out; }
+  .mtile.open { grid-column: span 3; grid-row: span 2; cursor: pointer; }
+  .mtile.open > img { cursor: pointer; }
+  .mhint { position: absolute; left: 14px; bottom: 14px; background: #fff; color: var(--fg); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; display: none; pointer-events: none; }
+  .mtile.open .mhint { display: block; }
+  .mclose { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--fg); color: #fff; font-size: 18px; line-height: 1; cursor: pointer; }
   .mtile:focus-visible { outline: 3px solid var(--c-orange); outline-offset: 2px; }
   .mcap { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; gap: 10px; padding: 12px 14px; color: #fff; background: linear-gradient(to top, rgba(20, 20, 19, 0.55), rgba(20, 20, 19, 0)); font-size: 15px; font-weight: 600; }
   .mcap .price { font-variant-numeric: tabular-nums; font-weight: 500; }
@@ -119,8 +123,8 @@
   .mpanel .toast { font-size: 13px; color: var(--muted); margin-top: 6px; min-height: 1.2em; }
   .tile .art.photo { padding: 0; }
   .tile .art.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  @media (max-width: 1000px) { #shop-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 220px; } .mtile.open { grid-column: span 2; } }
-  @media (max-width: 640px) { #shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 180px; gap: 10px; } .mtile.open img { width: 100%; height: 45%; } .mpanel { left: 0; top: 45%; padding: 12px 14px; } .mpanel h3 { font-size: 22px; } .mpanel p, .mpanel dl { display: none; } }
+  @media (max-width: 1000px) { .mgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 220px; } .mtile.open { grid-column: span 2; } }
+  @media (max-width: 640px) { .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 180px; gap: 10px; } .mtile.open img { width: 100%; height: 45%; } .mpanel { left: 0; top: 45%; padding: 12px 14px; } .mpanel h3 { font-size: 22px; } .mpanel p, .mpanel dl { display: none; } }
   /* Boutique classique */
   .shop { padding-block: 72px 24px; }
   .shop-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
@@ -359,7 +363,7 @@
           <select id="shop-sort"><option value="new">Nouveautés</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option></select>
         </div>
       </div>
-      <div class="grid" id="shop-grid"></div>
+      <div class="mgrid" id="shop-grid"></div>
       <p class="note" id="shop-count"></p>
       <p class="note">Pièces d'exemple pour la maquette, prix indicatifs.</p>
   </section>
@@ -370,7 +374,7 @@
       <h2>Pièces uniques</h2>
       <span class="eyebrow">Chaque pièce n'existe qu'en un exemplaire</span>
     </div>
-    <div class="grid" id="pieces-grid"></div>
+    <div class="mgrid" id="pieces-grid"></div>
     <p class="note">Pièces d'exemple pour la maquette, prix indicatifs.</p>
   </section>
 
@@ -380,7 +384,7 @@
       <h2>Objets du quotidien</h2>
       <span class="eyebrow">Petites séries, à partir de pièces trouvées en nombre</span>
     </div>
-    <div class="grid" id="objets-grid"></div>
+    <div class="mgrid" id="objets-grid"></div>
     <p class="note">Objets d'exemple pour la maquette, prix indicatifs.</p>
   </section>
 
@@ -724,7 +728,7 @@ if (!renderer) {
   // Produits d'exemple pour la maquette : photos du tableau Pinterest « Meubles » de Sébastien, noms et prix fictifs.
   const P = (n, name, kind, color, label, price, status, img, tall, origin, wood, dim, story) => ({ n, name, kind, color, label, price, status, img, tall, origin, wood, dim, story });
   const PIECES = [
-    P('014', 'Marcel', 'Banc', 'orange', 'Orange pur RAL 2004', 690, 'Pièce unique', 'img/p02.jpg', false, 'Pied en U d\'un banc d\'atelier, ferronnerie de Saint-Ouen, années 60', 'Planche de chêne de récupération, rabotée et huilée', '160 × 32 × 45 cm', 'Le pied en U vient d\'un banc d\'atelier démonté à Saint-Ouen. Dégraissé, sablé au corindon pour retrouver l\'acier nu, thermolaqué orange pur et cuit à 180 °C. La planche de chêne sort d\'une vieille charpente : rabotée, chanfreinée à la main, deux couches d\'huile dure. Assemblée sur quatre tirefonds, trois demi-journées de travail.'),
+    P('014', 'Marcel', 'Banc', 'orange', 'Orange pur RAL 2004', 190, 'Pièce unique', 'img/p02.jpg', false, 'Pied en U d\'un banc d\'atelier, ferronnerie de Saint-Ouen, années 60', 'Planche de chêne de récupération, rabotée et huilée', '160 × 32 × 45 cm', 'Le pied en U vient d\'un banc d\'atelier démonté à Saint-Ouen. Dégraissé, sablé au corindon pour retrouver l\'acier nu, thermolaqué orange pur et cuit à 180 °C. La planche de chêne sort d\'une vieille charpente : rabotée, chanfreinée à la main, deux couches d\'huile dure. Assemblée sur quatre tirefonds, trois demi-journées de travail.'),
     P('015', 'Louise', 'Table', 'corail', 'Rouge corail RAL 3016', 950, 'Pièce unique', 'img/p04.jpg', false, 'Cadre d\'une table de réfectoire, école de Montreuil, vers 1970', 'Plateau de frêne massif, 4 cm, huilé', '160 × 80 × 75 cm', 'Le cadre a servi quarante ans dans le réfectoire d\'une école de Montreuil. Nous l\'avons entièrement démonté, décapé, sablé, puis redressé à la presse avant de le laquer rouge corail. Le plateau est un frêne de scierie locale, séché deux ans, collé à plat joint, poncé jusqu\'au grain 240 et huilé en trois passes. Une semaine d\'atelier.'),
     P('016', 'Léon', 'Bancs d\'école', 'vert', 'Vert mousse RAL 6005', 390, 'Paire unique', 'img/p01.jpg', false, 'Deux piètements de bancs d\'école en tube d\'acier, lycée de Pantin', 'Lattes de chêne neuves, rabotées et huilées', '120 × 30 × 42 cm', 'Retrouvés ensemble dans la réserve d\'un lycée de Pantin, avec leurs lattes pourries. Les tubes ont été sablés, les soudures reprises là où elles avaient lâché, puis thermolaqués vert mousse. Les lattes de chêne sont neuves, rabotées à l\'épaisseur d\'origine et fixées sur les perçages existants. Vendus par paire, comme on les a trouvés.'),
     P('017', 'Émile', 'Banc sur IPN', 'jaune', 'Jaune vif RAL 1023', 790, 'Pièce unique', 'img/p08.jpg', false, 'IPN de 160 récupéré sur le chantier de la maison de Paul', 'Bastaing du même chantier, brossé et huilé', '160 × 20 × 38 cm', 'L\'IPN portait un plancher de la maison de Paul, à Bagnolet, avant les travaux. Tronçonné à longueur, meulé, sablé pour ôter soixante ans de calamine, thermolaqué jaune vif. Le bastaing vient du même chantier : brossé à la main pour faire ressortir le veinage, vissé sur l\'aile supérieure. Trente-huit kilos, deux jours d\'atelier, une pièce qui ne bougera plus.'),
@@ -750,8 +754,26 @@ if (!renderer) {
       <div class="meta"><div><span class="name">${p.name}</span><span class="kind">${p.kind} · ${p.label}</span></div><span class="price">${euro(p.price)}</span></div>
     </a>`;
   }
-  document.getElementById('pieces-grid').innerHTML = PIECES.map(tile).join('');
-  document.getElementById('objets-grid').innerHTML = OBJETS.map(tile).join('');
+  const FICHE = (n) => 'produit.html?n=' + encodeURIComponent(n);
+  function mosaic(list) {
+    return list.map((p) => `<article class="mtile${p.tall ? ' tall' : ''}" data-n="${p.n}" tabindex="0" role="button" aria-expanded="false" aria-label="${p.name}, ${p.kind}, ${euro(p.price)}">
+      <img src="${p.img}" alt="" loading="lazy">
+      <div class="mcap"><span class="name">${p.name}</span><span class="price">${euro(p.price)}</span></div>
+      <span class="mhint">Cliquer pour voir la fiche →</span>
+      <div class="mpanel">
+        <button type="button" class="mclose" aria-label="Réduire">×</button>
+        <span class="eyebrow">${p.status} · n° ${p.n}</span>
+        <h3>${p.name}</h3>
+        <div class="kind">${p.kind} · ${p.label}</div>
+        <p>${p.story}</p>
+        <dl><dt>Métal</dt><dd>${p.origin}</dd><dt>Bois</dt><dd>${p.wood}</dd><dt>Dimensions</dt><dd>${p.dim}</dd></dl>
+        <div class="buy"><span class="price">${euro(p.price)}</span><button type="button" class="btn madd">Ajouter au panier</button><a class="btn ghost" href="${FICHE(p.n)}">Voir la fiche</a></div>
+        <div class="toast"></div>
+      </div>
+    </article>`).join('');
+  }
+  document.getElementById('pieces-grid').innerHTML = mosaic(PIECES);
+  document.getElementById('objets-grid').innerHTML = mosaic(OBJETS);
 
   // Palette : sept bandes, de gauche à droite. La bande i commence à i/7 de la largeur et couvre tout ce qui reste ;
   // au défilement elle se réduit à une bande d'un septième, ce qui dévoile la couleur suivante derrière.
@@ -809,19 +831,7 @@ if (!renderer) {
     if (shop.sort === 'asc') list = [...list].sort((a, b) => a.price - b.price);
     if (shop.sort === 'desc') list = [...list].sort((a, b) => b.price - a.price);
     const grid = document.getElementById('shop-grid');
-    grid.innerHTML = list.map((p) => `<article class="mtile${p.tall ? ' tall' : ''}" data-n="${p.n}" tabindex="0" role="button" aria-expanded="false" aria-label="${p.name}, ${p.kind}, ${euro(p.price)}">
-      <img src="${p.img}" alt="" loading="lazy">
-      <div class="mcap"><span class="name">${p.name}</span><span class="price">${euro(p.price)}</span></div>
-      <div class="mpanel">
-        <span class="eyebrow">${p.status} · n° ${p.n}</span>
-        <h3>${p.name}</h3>
-        <div class="kind">${p.kind} · ${p.label}</div>
-        <p>${p.story}</p>
-        <dl><dt>Métal</dt><dd>${p.origin}</dd><dt>Bois</dt><dd>${p.wood}</dd><dt>Dimensions</dt><dd>${p.dim}</dd></dl>
-        <div class="buy"><span class="price">${euro(p.price)}</span><button type="button" class="btn madd">Ajouter au panier</button><a class="btn ghost" href="#piece-${p.n}">La fiche</a></div>
-        <div class="toast"></div>
-      </div>
-    </article>`).join('') || '<p class="note">Aucune Rehue dans cette couleur pour le moment.</p>';
+    grid.innerHTML = mosaic(list) || '<p class="note">Aucune Rehue dans cette couleur pour le moment.</p>';
     document.getElementById('shop-count').textContent = list.length + (list.length > 1 ? ' Rehues' : ' Rehue');
   }
   document.querySelectorAll('.chip[data-f]').forEach((b) => b.addEventListener('click', () => {
@@ -839,9 +849,8 @@ if (!renderer) {
   renderShop();
 
   // Agrandissement en place : la tuile cliquée prend 2 × 2 cases, les autres se réorganisent autour, avec une animation FLIP.
-  const mgrid = document.getElementById('shop-grid');
   const reduceM = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function flip(mutate) {
+  function flip(mgrid, mutate) {
     const tiles = Array.from(mgrid.querySelectorAll('.mtile'));
     const before = new Map(tiles.map((t) => [t, t.getBoundingClientRect()]));
     mutate();
@@ -857,24 +866,29 @@ if (!renderer) {
       if (img) img.animate([{ transform: `scale(${1 / sx}, ${1 / sy})` }, { transform: 'none' }], { duration: 560, easing: 'cubic-bezier(.22, .8, .2, 1)' });
     }
   }
-  mgrid.addEventListener('click', (ev) => {
-    const add = ev.target.closest('.madd');
-    const tile = ev.target.closest('.mtile');
-    if (!tile) return;
-    if (add) {
-      const p = ALL.find((x) => x.n === tile.dataset.n);
-      tile.querySelector('.toast').textContent = window.rehue.addToCart(p, null);
-      return;
-    }
-    if (ev.target.closest('a, button')) return;
-    const open = mgrid.querySelector('.mtile.open');
-    flip(() => {
-      if (open && open !== tile) { open.classList.remove('open'); open.setAttribute('aria-expanded', 'false'); }
-      const now = !tile.classList.contains('open');
-      tile.classList.toggle('open', now); tile.setAttribute('aria-expanded', String(now));
+  for (const mgrid of document.querySelectorAll('.mgrid')) {
+    mgrid.addEventListener('click', (ev) => {
+      const tile = ev.target.closest('.mtile');
+      if (!tile) return;
+      if (ev.target.closest('.madd')) {
+        const p = ALL.find((x) => x.n === tile.dataset.n);
+        tile.querySelector('.toast').textContent = window.rehue.addToCart(p, null);
+        return;
+      }
+      const close = ev.target.closest('.mclose');
+      if (!close && ev.target.closest('a, button')) return;
+      // Deuxième clic sur une tuile déjà agrandie (hors panneau de texte) : on ouvre la fiche complète.
+      if (!close && tile.classList.contains('open') && !ev.target.closest('.mpanel')) { location.href = FICHE(tile.dataset.n); return; }
+      if (!close && ev.target.closest('.mpanel')) return;
+      const open = mgrid.querySelector('.mtile.open');
+      flip(mgrid, () => {
+        if (open && open !== tile) { open.classList.remove('open'); open.setAttribute('aria-expanded', 'false'); }
+        const now = close ? false : true;
+        tile.classList.toggle('open', now); tile.setAttribute('aria-expanded', String(now));
+      });
     });
-  });
-  mgrid.addEventListener('keydown', (ev) => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.classList.contains('mtile')) { ev.preventDefault(); ev.target.click(); } });
+    mgrid.addEventListener('keydown', (ev) => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.classList.contains('mtile')) { ev.preventDefault(); ev.target.click(); } });
+  }
 
 
   // Fiche produit
@@ -928,7 +942,7 @@ if (!renderer) {
   function route() {
     const h = (location.hash || '#accueil').slice(1);
     let view = h, piece = null;
-    if (h.startsWith('piece-')) { view = 'piece'; piece = h.slice(6); }
+    if (h.startsWith('piece-')) { location.replace(FICHE(h.slice(6))); return; }
     if (!VIEWS.includes(view)) view = 'accueil';
     const toShop = view === 'rehues';
     if (toShop) view = 'accueil';
