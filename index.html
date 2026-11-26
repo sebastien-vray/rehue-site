@@ -120,6 +120,11 @@
   .mpanel .buy { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .mpanel .buy .price { font-size: 20px; font-weight: 600; }
   .mpanel .btn { min-height: 38px; padding: 7px 14px; font-size: 14px; }
+  .mpanel .flink { display: inline-block; margin-top: 12px; font-size: 14px; font-weight: 600; color: var(--fg); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-color: var(--c-orange); background: linear-gradient(transparent 60%, rgba(255, 195, 0, .45) 60%); padding: 0 2px; }
+  .mpanel .flink:hover { background: rgba(255, 195, 0, .45); }
+  .mtile.open .mpanel { animation: mpanelIn .55s .32s both cubic-bezier(.33, 1, .68, 1); }
+  @keyframes mpanelIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .mtile.open .mpanel { animation: none; } }
   .mpanel .toast { font-size: 13px; color: var(--muted); margin-top: 6px; min-height: 1.2em; }
   .tile .art.photo { padding: 0; }
   .tile .art.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -767,7 +772,7 @@ if (!renderer) {
         <div class="kind">${p.kind} · ${p.label}</div>
         <p>${p.story}</p>
         <dl><dt>Métal</dt><dd>${p.origin}</dd><dt>Bois</dt><dd>${p.wood}</dd><dt>Dimensions</dt><dd>${p.dim}</dd></dl>
-        <div class="buy"><span class="price">${euro(p.price)}</span><button type="button" class="btn madd">Ajouter au panier</button><a class="btn ghost" href="${FICHE(p.n)}">Voir la fiche</a></div>
+        <div class="buy"><span class="price">${euro(p.price)}</span><button type="button" class="btn madd">Ajouter au panier</button></div><a class="flink" href="${FICHE(p.n)}">Voir la fiche complète →</a>
         <div class="toast"></div>
       </div>
     </article>`).join('');
@@ -861,9 +866,12 @@ if (!renderer) {
       const dx = a.left - b.left, dy = a.top - b.top, sx = a.width / b.width, sy = a.height / b.height;
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) continue;
       t.style.transformOrigin = '0 0';
-      t.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }, { transform: 'none' }], { duration: 560, easing: 'cubic-bezier(.22, .8, .2, 1)' });
+      const opt = { duration: 820, easing: 'cubic-bezier(.65, 0, .35, 1)', fill: 'backwards' };
+      t.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }, { transform: 'none' }], opt);
       const img = t.querySelector('img');
-      if (img) img.animate([{ transform: `scale(${1 / sx}, ${1 / sy})` }, { transform: 'none' }], { duration: 560, easing: 'cubic-bezier(.22, .8, .2, 1)' });
+      if (img) img.animate([{ transform: `scale(${1 / sx}, ${1 / sy})` }, { transform: 'none' }], opt);
+      const cap = t.querySelector('.mcap');
+      if (cap && (Math.abs(sx - 1) > 0.001 || Math.abs(sy - 1) > 0.001)) cap.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 500, fill: 'backwards' });
     }
   }
   for (const mgrid of document.querySelectorAll('.mgrid')) {
